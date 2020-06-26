@@ -11,6 +11,7 @@
 typedef struct server_info {
 	int port;
 	char* ip_addr;
+	char* keep_alive;
 } server_info;
 
 typedef struct timer_info {
@@ -120,7 +121,7 @@ void* start_server(void* si) {
 }
 
 
-void start_n_servers(int num_servers, int start_port, char* ip_addr) {
+void start_n_servers(int num_servers, int start_port, int runtime, char* ip_addr) {
 	pthread_t threads[num_servers+1];
 	struct server_info si[num_servers];
 
@@ -140,7 +141,7 @@ void start_n_servers(int num_servers, int start_port, char* ip_addr) {
 
 
 	struct timer_info ti;
-	ti.time = time;
+	ti.time = runtime;
 	ti.keep_alive = &keep_alive;
 	pthread_create(&threads[num_servers], NULL, timer_thread, (void*)&ti);
 
@@ -163,7 +164,7 @@ int main(int argc, char const *argv[]) {
 
 	//start_server(start_port, ip_addr);
 
-	start_n_servers(num_servers, start_port, ip_addr);
+	start_n_servers(num_servers, start_port, runtime, ip_addr);
 
 	for (int i = 0; i < num_servers; i++) {
 		int a = 0;//start_server(start_port + i, ip_addr);
