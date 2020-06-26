@@ -50,8 +50,8 @@ int open_connection(char* ip_addr, int port) {
 
 	// open a socket
 	if ((client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		perror("socket creation error");
-		exit(EXIT_FAILURE);
+		//perror("socket creation error");
+		//exit(EXIT_FAILURE);
 	}
 
 	// initialize the tcp:<ip_addr>:<port_num>
@@ -62,8 +62,8 @@ int open_connection(char* ip_addr, int port) {
 	// connect to server
 	if (connect(client_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
 		printf("failed port: %i\n", port);
-		perror("connect failed");
-		exit(EXIT_FAILURE);
+		//perror("connect failed");
+		//exit(EXIT_FAILURE);
 	}
 
 	return client_fd;
@@ -89,7 +89,7 @@ int* send_message(int port, char* ip_addr, char* message) {
 	// open a socket
 	if ((client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		perror("socket creation error");
-		exit(EXIT_FAILURE);
+		//exit(EXIT_FAILURE);
 	}
 
 	// initialize the tcp:<ip_addr>:<port_num>
@@ -101,7 +101,7 @@ int* send_message(int port, char* ip_addr, char* message) {
 	if (connect(client_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
 		printf("failed port: %i\n", port);
 		perror("connect failed");
-		exit(EXIT_FAILURE);
+		//exit(EXIT_FAILURE);
 	}
 
 	// send message
@@ -135,7 +135,10 @@ void* send_message_loop(void* msi) {
 		printf("num_sent:%i: %i\n", port, num_sent);
 
 		int client_fd = open_connection(ip_addr, port);
-		send(client_fd, rand_message, message_size+1, 0);
+		
+		if (send(client_fd, rand_message, message_size+1, 0) < 0) {
+			printf("failed to send %i\n", num_sent);
+		}
 
 		if (shutdown(client_fd, SHUT_WR) != 0) {
 			printf("unable to shutdown properly\n");

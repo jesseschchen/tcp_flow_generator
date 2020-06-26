@@ -103,6 +103,7 @@ void* start_server(void* si) {
 
 	int num_connections = 0;
 
+
 	//accept new connections
 	while ((new_socket = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen)) && (*keep_alive == 1)) {
 		if (new_socket < 0) {
