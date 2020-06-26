@@ -13,6 +13,10 @@ typedef struct server_info {
 	char* ip_addr;
 } server_info;
 
+typedef struct timer_info {
+	int time;
+	char* keep_alive;
+} timer_info;
 
 
 void accept_connection(int new_socket) {
@@ -42,6 +46,16 @@ void accept_connection(int new_socket) {
 	// what to do once connection is accepted
 }
 
+void* timer_thread(void* ti) {
+	timer_info* tim_inf = (timer_info*) ti;
+	int t = tim_inf->time;
+	char* keep_alive = tim_inf->keep_alive;
+
+	sleep(t);
+	*keep_alive = 0;
+
+	pthread_exit(NULL);
+}
 
 
 //int start_server(int port, char* ip_addr) {  
@@ -50,6 +64,7 @@ void* start_server(void* si) {
 	server_info* ser_inf = (server_info*) si;
 	int port = ser_inf->port;
 	char* ip_addr = ser_inf->ip_addr;
+	char* keep_alive = ser_inf->keep_alive;
 
 
 	int server_fd, new_socket;
@@ -88,7 +103,7 @@ void* start_server(void* si) {
 	int num_connections = 0;
 
 	//accept new connections
-	while (new_socket = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen)) {
+	while ((new_socket = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen)) && (*keep_alive == 1)) {
 		if (new_socket < 0) {
 			perror("accept failed");
 			exit(EXIT_FAILURE);			
@@ -106,30 +121,42 @@ void* start_server(void* si) {
 
 
 void start_n_servers(int num_servers, int start_port, char* ip_addr) {
-	pthread_t threads[num_servers];
+	pthread_t threads[num_servers+1];
 	struct server_info si[num_servers];
+
+	char keep_alive = (char)1;
 
 
 	for(int i = 0; i < num_servers; i++) {
 		// server info struct
 		si[i].port = start_port + i;
 		si[i].ip_addr = ip_addr;
+		si[i].keep_alive = &keep_alive;
 
 		// create a server thread
 		int thread_val = pthread_create(&threads[i], NULL, start_server, (void*)&si[i]);
 		// start the server thread
 	}
+
+
+	struct timer_info ti;
+	ti.time = time;
+	ti.keep_alive = &keep_alive;
+	pthread_create(&threads[num_servers], NULL, timer_thread, (void*)&ti);
+
+
 	pthread_exit(NULL);
 }
 
 
 
 
-// ./server <num_servers>
+// ./server <num_servers> <runtime>
 int main(int argc, char const *argv[]) {
 
 
 	int num_servers = atoi(argv[1]);
+	int runtime = atoi(argv[2]);
 
 	int start_port = 26000;
 	char* ip_addr = "10.16.224.68";
