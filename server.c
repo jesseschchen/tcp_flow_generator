@@ -159,11 +159,11 @@ int main(int argc, char const *argv[]) {
 
 	int num_servers = atoi(argv[1]);
 	int runtime = atoi(argv[2]);
-	char* ip_addr = argv[3];
+	char* ip_addr = (char*)argv[3];
+	//char* ip_addr = "10.16.224.68";
 
 
 	int start_port = 26000;
-	char* ip_addr = "10.16.224.68";
 
 	//start_server(start_port, ip_addr);
 

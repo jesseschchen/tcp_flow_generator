@@ -221,9 +221,9 @@ int main(int argc, char const* argv[]) {
 	// parse arguments
 	int num_servers = atoi(argv[1]);
 	int runtime = atoi(argv[2]);
-	char* ip_addr = argv[3];
+	char* ip_addr = (char*)argv[3];
+	//char* ip_addr = "10.16.224.68";
 
-	char* ip_addr = "10.16.224.68";
 	char* message = "123\0";
 
 	int start_port = 26000;
