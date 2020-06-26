@@ -153,12 +153,14 @@ void start_n_servers(int num_servers, int start_port, int runtime, char* ip_addr
 //git comment
 
 
-// ./server <num_servers> <runtime>
+// ./server <num_servers> <runtime> <server_ip>
 int main(int argc, char const *argv[]) {
 
 
 	int num_servers = atoi(argv[1]);
 	int runtime = atoi(argv[2]);
+	char* ip_addr = argv[3];
+
 
 	int start_port = 26000;
 	char* ip_addr = "10.16.224.68";

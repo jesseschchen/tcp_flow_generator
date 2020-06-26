@@ -135,7 +135,7 @@ void* send_message_loop(void* msi) {
 		printf("num_sent:%i: %i\n", port, num_sent);
 
 		int client_fd = open_connection(ip_addr, port);
-		
+
 		if (send(client_fd, rand_message, message_size+1, 0) < 0) {
 			printf("failed to send %i\n", num_sent);
 		}
@@ -215,12 +215,13 @@ void send_n_messages(int num_messages, int start_port, int message_size, int tim
 
 
 
-// ./client <num_connections> <runtime>
+// ./client <num_connections> <runtime> <server_ip>
 int main(int argc, char const* argv[]) {
 
 	// parse arguments
 	int num_servers = atoi(argv[1]);
 	int runtime = atoi(argv[2]);
+	char* ip_addr = argv[3];
 
 	char* ip_addr = "10.16.224.68";
 	char* message = "123\0";
