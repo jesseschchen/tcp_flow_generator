@@ -148,7 +148,7 @@ void start_n_servers(int num_servers, int start_port, char* ip_addr) {
 	pthread_exit(NULL);
 }
 
-
+//git comment
 
 
 // ./server <num_servers> <runtime>
