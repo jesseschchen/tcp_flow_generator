@@ -141,10 +141,12 @@ void start_n_servers(int num_servers, int start_port, int runtime, char* ip_addr
 	}
 
 
-	struct timer_info ti;
-	ti.time = runtime;
-	ti.keep_alive = &keep_alive;
-	pthread_create(&threads[num_servers], NULL, timer_thread, (void*)&ti);
+	if(runtime != 0) {
+		struct timer_info ti;
+		ti.time = runtime;
+		ti.keep_alive = &keep_alive;
+		pthread_create(&threads[num_servers], NULL, timer_thread, (void*)&ti);
+	}
 
 
 	pthread_exit(NULL);

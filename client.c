@@ -40,6 +40,7 @@ char* read_random_bytes(int num_bytes) {
 		//printf("read %i == no problemo\n", num_bytes);
 	}
 
+	fclose(fp);
 	return buffer;
 }
 
@@ -50,8 +51,8 @@ int open_connection(char* ip_addr, int port) {
 
 	// open a socket
 	if ((client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		//perror("socket creation error");
-		//exit(EXIT_FAILURE);
+		perror("socket creation error");
+		exit(EXIT_FAILURE);
 	}
 
 	// initialize the tcp:<ip_addr>:<port_num>
@@ -62,8 +63,8 @@ int open_connection(char* ip_addr, int port) {
 	// connect to server
 	if (connect(client_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
 		printf("failed port: %i\n", port);
-		//perror("connect failed");
-		//exit(EXIT_FAILURE);
+		perror("connect failed");
+		exit(EXIT_FAILURE);
 	}
 
 	return client_fd;
@@ -71,7 +72,7 @@ int open_connection(char* ip_addr, int port) {
 
 // 
 //void* send_message(void* mi) {
-int* send_message(int port, char* ip_addr, char* message) {
+void send_message(int port, char* ip_addr, char* message) {
 	// parse message info out of void* variable
 	/*message_info* mes_inf = (message_info*) mi;
 	int port = mes_inf->port;
@@ -130,7 +131,7 @@ void* send_message_loop(void* msi) {
 	int num_sent = 0;
 	char* rand_message = read_random_bytes(message_size);
 
-	while(*keep_alive == 1) {
+	while (*keep_alive == 1) {
 		num_sent += 1;
 		printf("num_sent:%i: %i\n", port, num_sent);
 
@@ -165,24 +166,21 @@ void* timer_thread(void* ti) {
 	pthread_exit(NULL);
 }
 
-
-
 // called once
 // this creates all the threads
 void send_n_messages(int num_messages, int start_port, int message_size, int time, char* ip_addr) {
 
-	pthread_t threads[num_messages+1];
+	//pthread_t threads[num_messages+1];
 	//struct message_info mi[num_messages];
-	struct message_sender_info msi[num_messages];
+	//struct message_sender_info msi[num_messages];
 
-	char keep_alive = (char) 1;
-
+	/*
 	for (int i = 0; i < num_messages; i++) {
 		//struct message_info mi;
-		/*mi[i].port = start_port + i;
-		mi[i].ip_addr = ip_addr;
-		mi[i].message = (char*)malloc(1024);
-		sprintf(mi[i].message, "hello message: %i", i);*/
+		//mi[i].port = start_port + i;
+		//mi[i].ip_addr = ip_addr;
+		//mi[i].message = (char*)malloc(1024);
+		//sprintf(mi[i].message, "hello message: %i", i);
 
 		msi[i].port = start_port + i;
 		msi[i].message_size = message_size;
@@ -200,13 +198,45 @@ void send_n_messages(int num_messages, int start_port, int message_size, int tim
 		//int thread_val = pthread_create(&threads[i], NULL, send_message, (void*)&mi[i]);
 
 		//free(&mi);
-	}
+	}*/
+
+	char keep_alive = (char) 1;
 
 	struct timer_info ti;
 	ti.time = time;
 	ti.keep_alive = &keep_alive;
+	pthread_t t_thread;
+	pthread_create(&t_thread, NULL, timer_thread, (void*)&ti);
 
-	pthread_create(&threads[num_messages], NULL, timer_thread, (void*)&ti);
+	int num_sent = 0;
+	char* rand_message = read_random_bytes(message_size);
+	while (keep_alive == 1) {
+		for (int i = 0; i < num_messages; i++) {
+
+			num_sent += 1;
+			int port = start_port + i;
+
+
+			printf("num_sent:%i: %i\n", port, num_sent);
+
+
+			int client_fd = open_connection(ip_addr, port);
+
+			if (send(client_fd, rand_message, message_size+1, 0) < 0) {
+				printf("failed to send %i\n", num_sent);
+			}
+
+			if (shutdown(client_fd, SHUT_WR) != 0) {
+				close(client_fd);
+				printf("unable to shutdown properly\n");
+			}
+			else {
+				close(client_fd);
+				printf("proper shutdown\n");
+			}
+		}
+	}
+	free(rand_message);
 
 
 	pthread_exit(NULL);
