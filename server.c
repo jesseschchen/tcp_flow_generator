@@ -152,7 +152,74 @@ void start_n_servers(int num_servers, int start_port, int runtime, char* ip_addr
 	pthread_exit(NULL);
 }
 
-//git comment
+
+void start_one_server(int num_servers, int start_port, int runtime, char* ip_addr) {
+	char keep_alive = (char) 1;
+
+	int server_fd, new_socket;
+
+	struct sockaddr_in address;
+	int addrlen = sizeof(address);
+
+	// we want a IPv4(AF_INET), TCP(SOCK_STREAM) socket
+	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+		perror("socket failed");
+		exit(EXIT_FAILURE);
+	}
+
+	for (int i = 0; i < num_servers; i++) {
+		// set IPv4, IP address, and port for address
+		address.sin_family = AF_INET;
+		address.sin_addr.s_addr = inet_addr(ip_addr);
+		address.sin_port = htons(start_port + i);
+
+		// bind socket to particular address
+		if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
+			perror("bind failed");
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	// listen on that socket
+	if (listen(server_fd, 65) < 0) {
+		perror("listen failed");
+		exit(EXIT_FAILURE);
+	}
+
+	//printf("server started on %i\n", port);
+
+	int num_connections = 0;
+
+
+	//accept new connections
+	while ((new_socket = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen)) && (keep_alive == 1)) {
+		if (new_socket < 0) {
+			perror("accept failed");
+			exit(EXIT_FAILURE);			
+		}
+		else {
+			// accept is successful
+			num_connections += 1;
+			//printf("connection accepted:%i: %i\n", port, num_connections);
+			accept_connection(new_socket);
+		}
+	}
+
+
+
+	// timer stuff
+	if(runtime != 0) {
+		struct timer_info ti;
+		ti.time = runtime;
+		ti.keep_alive = &keep_alive;
+		pthread_t t_thread;
+		pthread_create(&t_thread, NULL, timer_thread, (void*)&ti);
+	}
+
+
+	pthread_exit(NULL);
+
+}
 
 
 // ./server <num_servers> <runtime> <server_ip>
@@ -171,9 +238,13 @@ int main(int argc, char const *argv[]) {
 
 	start_n_servers(num_servers, start_port, runtime, ip_addr);
 
+	//start_one_server(num_servers, start_port, runtime, ip_addr);
+
 	for (int i = 0; i < num_servers; i++) {
 		int a = 0;//start_server(start_port + i, ip_addr);
 	}
+
+
 	
 }
  
