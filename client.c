@@ -302,7 +302,9 @@ int main(int argc, char const* argv[]) {
 
 	int start_port = 26000;
 
-	int message_size = 20000;
+	
+	//int message_size = 20000;
+	int message_size = 100000;
 
 
 	//int runtime = 2;
