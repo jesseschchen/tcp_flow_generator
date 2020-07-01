@@ -204,12 +204,13 @@ void send_n_messages(int num_messages, int start_port, int message_size, int tim
 		//free(&mi);
 	}
 
-
-	struct timer_info ti;
-	ti.time = time;
-	ti.keep_alive = &keep_alive;
-	pthread_t t_thread;
-	pthread_create(&t_thread, NULL, timer_thread, (void*)&ti);
+	if (time != 0) {
+		struct timer_info ti;
+		ti.time = time;
+		ti.keep_alive = &keep_alive;
+		pthread_t t_thread;
+		pthread_create(&t_thread, NULL, timer_thread, (void*)&ti);
+	}
 
 	/*int num_sent = 0;
 	char* rand_message = read_random_bytes(message_size);
