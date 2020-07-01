@@ -142,6 +142,7 @@ void* send_message_loop(void* msi) {
 		}
 
 		if (shutdown(client_fd, SHUT_WR) != 0) {
+			close(client_fd);
 			printf("unable to shutdown properly\n");
 		}
 		else {
@@ -289,13 +290,14 @@ void single_thread_send_messages(int num_messages, int start_port, int message_s
 
 
 
-// ./client <num_connections> <runtime> <server_ip>
+// ./client <num_connections> <runtime> <server_ip> <message_size>
 int main(int argc, char const* argv[]) {
 
 	// parse arguments
 	int num_servers = atoi(argv[1]);
 	int runtime = atoi(argv[2]);
 	char* ip_addr = (char*)argv[3];
+	int message_size = atoi(argv[4]);
 	//char* ip_addr = "10.16.224.68";
 
 	char* message = "123\0";
@@ -304,7 +306,7 @@ int main(int argc, char const* argv[]) {
 
 	
 	//int message_size = 20000;
-	int message_size = 100000;
+	//int message_size = 100000;
 
 
 	//int runtime = 2;
