@@ -33,15 +33,30 @@ char* read_random_bytes(int num_bytes) {
 	FILE* fp = fopen("/dev/urandom", "r");
 	int bytes_read = fread(buffer, 1, num_bytes, fp);
 
-	if (bytes_read != num_bytes) {
-		//printf("yo read more you fool\n");
-	}
-	else {
-		//printf("read %i == no problemo\n", num_bytes);
-	}
 
 	fclose(fp);
 	return buffer;
+}
+
+// message_id = exactly 4 bytes long 
+// random_bytes = exactly num_bytes long
+char* create_message(int num_bytes, char* message_id, char* random_bytes) {
+	char* message = random_bytes;
+
+	//char* syn = "SYN\0";
+	//char* fin = "FIN\0";
+	char* syn = "SYN*";
+	char* fin = "FIN*";
+
+	memcpy(message, syn, 4);
+	memcpy(&message[4], message_id, 4);
+
+	memcpy(&message[num_bytes-8], fin, 4);
+	memcpy(&message[num_bytes-4], message_id, 4);
+
+	//printf("%s\n", message);
+
+	return message;
 }
 
 int open_connection(char* ip_addr, int port) {
@@ -129,29 +144,37 @@ void* send_message_loop(void* msi) {
 	char* keep_alive = m_s_i->keep_alive;
 
 	int num_sent = 0;
-	char* rand_message = read_random_bytes(message_size);
+	char* random_bytes = read_random_bytes(message_size);
 
+	// tcp SYN packet
+	int client_fd = open_connection(ip_addr, port);
+	
+	// repeatedly send message
 	while (*keep_alive == 1) {
 		num_sent += 1;
 		printf("num_sent:%i: %i\n", port, num_sent);
 
-		int client_fd = open_connection(ip_addr, port);
+		//create message
+		char* message_id = read_random_bytes(4);
+		char* message = create_message(message_size, message_id, random_bytes);
 
-		if (send(client_fd, rand_message, message_size+1, 0) < 0) {
+		// send message
+		if (send(client_fd, message, message_size, 0) < 0) {
 			printf("failed to send %i\n", num_sent);
 		}
+		free(message_id);
+	}
 
-		if (shutdown(client_fd, SHUT_WR) != 0) {
-			close(client_fd);
-			printf("unable to shutdown properly\n");
-		}
-		else {
-			close(client_fd);
-			printf("proper shutdown\n");
-		}
+	// tcp FIN packet
+	if (shutdown(client_fd, SHUT_WR) != 0) {
+		close(client_fd);
+		printf("unable to shutdown properly\n");
+	}
+	else {
+		close(client_fd);
+		printf("proper shutdown\n");
 	}
 	
-	free(rand_message);
 
 	pthread_exit(NULL);
 }
@@ -295,13 +318,13 @@ void single_thread_send_messages(int num_messages, int start_port, int message_s
 int main(int argc, char const* argv[]) {
 
 	// parse arguments
+	
 	int num_servers = atoi(argv[1]);
 	int runtime = atoi(argv[2]);
 	char* ip_addr = (char*)argv[3];
 	int message_size = atoi(argv[4]);
 	//char* ip_addr = "10.16.224.68";
 
-	char* message = "123\0";
 
 	int start_port = 26000;
 
@@ -312,12 +335,14 @@ int main(int argc, char const* argv[]) {
 
 	//int runtime = 2;
 
-	printf("runtime: %i\n", runtime);
 
-	//send_message(start_port, ip_addr, message);
 
-	//char* random = read_random_bytes(20000);
 
 	send_n_messages(num_servers, start_port, message_size, runtime, ip_addr);
+
+	//char* message_id = "abcd";
+	//char* random_bytes = read_random_bytes(40);
+	//char* message = create_message(38, message_id, random_bytes);
+
 
 }

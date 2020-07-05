@@ -34,6 +34,7 @@ void accept_connection(int new_socket) {
 	}
 
 	if(shutdown(new_socket, SHUT_RD) != 0) {
+		close(new_socket);
 		printf("failed shutdown\n");
 	}
 	else {
