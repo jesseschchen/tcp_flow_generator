@@ -29,7 +29,9 @@ void accept_connection(int new_socket) {
 	//printf("preread buffer: %s\n", buffer);
 
 	int read_size = 0;
+	char* message = "ok";
 	while(read_size = read(new_socket, buffer, buffer_size)) {
+		send(new_socket, message, strlen(message), 0);
 		//printf("read: %i\n", read_size);
 	}
 

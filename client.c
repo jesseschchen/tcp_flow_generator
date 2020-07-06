@@ -148,22 +148,25 @@ void* send_message_loop(void* msi) {
 
 	// tcp SYN packet
 	int client_fd = open_connection(ip_addr, port);
-	char* message_id_0 = read_random_bytes(4);
+	char message_id_0 = (char)0; //read_random_bytes(4);
+	//char* message_id_0 = "0000";
 	
+	char* recv_buffer = malloc(2048);
 	// repeatedly send message
 	while (*keep_alive == 1) {
-		num_sent += 1;
-		printf("num_sent:%i: %i\n", port, num_sent);
-
-
 		//create message
-		int message_id = (int)*message_id_0 + num_sent;
+		int message_id = (int)message_id_0 + num_sent;
 		char* message = create_message(message_size, (char*)&message_id, random_bytes);
 
 		// send message
 		if (send(client_fd, message, message_size, 0) < 0) {
 			printf("failed to send %i\n", num_sent);
 		}
+		int bytes_read = read(client_fd, recv_buffer, 2048);
+
+		num_sent += 1;
+		printf("num_sent:%i: %i\n", port, num_sent);
+		//sleep(0.01);
 	}
 
 	// tcp FIN packet
@@ -176,7 +179,7 @@ void* send_message_loop(void* msi) {
 		printf("proper shutdown\n");
 	}
 	
-	free(message_id_0);
+	//free(message_id_0);
 	free(random_bytes);
 
 	pthread_exit(NULL);
