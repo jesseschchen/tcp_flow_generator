@@ -12,6 +12,7 @@ typedef struct server_info {
 	int port;
 	char* ip_addr;
 	char* keep_alive;
+	int message_size;
 } server_info;
 
 typedef struct timer_info {
@@ -20,14 +21,14 @@ typedef struct timer_info {
 } timer_info;
 
 
-void accept_connection(int new_socket, char* keep_alive ) {
+void accept_connection(int new_socket, int message_size) {
 	int buffer_size = 2048;
 	//char buffer[buffer_size];
 	char* buffer = malloc(buffer_size);
 	buffer[0] = '\0';
 
 	//printf("preread buffer: %s\n", buffer);
-	printf("new_socket: %i\n", new_socket);
+	//printf("new_socket: %i\n", new_socket);
 
 	int read_size = 0;
 	char* message = "ok";
@@ -35,7 +36,7 @@ void accept_connection(int new_socket, char* keep_alive ) {
 	while(read_size = read(new_socket, buffer, buffer_size)) {
 		total_read += read_size;
 		printf("total_read: %i\n", total_read);
-		if (total_read >= 20000) {
+		if (total_read >= message_size) {
 			int send_val = send(new_socket, message, strlen(message), 0);
 			total_read = 0;
 			//printf("send_val: %i\n", send_val);
@@ -87,6 +88,7 @@ void* start_server(void* si) {
 	int port = ser_inf->port;
 	char* ip_addr = ser_inf->ip_addr;
 	char* keep_alive = ser_inf->keep_alive;
+	int message_size = ser_inf->message_size;
 
 
 	int server_fd, new_socket;
@@ -136,7 +138,7 @@ void* start_server(void* si) {
 			// accept is successful
 			num_connections += 1;
 			printf("connection accepted:%i: %i\n", port, num_connections);
-			accept_connection(new_socket, keep_alive);
+			accept_connection(new_socket, message_size);
 			printf("connection ended: %i: %i\n", port, num_connections);
 		}
 	//}
@@ -145,7 +147,7 @@ void* start_server(void* si) {
 }
 
 
-void start_n_servers(int num_servers, int start_port, int runtime, char* ip_addr) {
+void start_n_servers(int num_servers, int start_port, int runtime, char* ip_addr, int message_size) {
 	pthread_t threads[num_servers+1];
 	struct server_info si[num_servers];
 
@@ -157,6 +159,7 @@ void start_n_servers(int num_servers, int start_port, int runtime, char* ip_addr
 		si[i].port = start_port + i;
 		si[i].ip_addr = ip_addr;
 		si[i].keep_alive = &keep_alive;
+		si[i].message_size = message_size;
 
 		// create a server thread
 		int thread_val = pthread_create(&threads[i], NULL, start_server, (void*)&si[i]);
@@ -180,7 +183,7 @@ void start_n_servers(int num_servers, int start_port, int runtime, char* ip_addr
 	pthread_exit(NULL);
 }
 
-
+// not used
 void start_one_server(int num_servers, int start_port, int runtime, char* ip_addr) {
 	char keep_alive = (char) 1;
 
@@ -229,7 +232,7 @@ void start_one_server(int num_servers, int start_port, int runtime, char* ip_add
 			// accept is successful
 			num_connections += 1;
 			//printf("connection accepted:%i: %i\n", port, num_connections);
-			accept_connection(new_socket, &keep_alive);
+			//accept_connection(new_socket, &keep_alive);
 		}
 	}
 
@@ -250,12 +253,13 @@ void start_one_server(int num_servers, int start_port, int runtime, char* ip_add
 }
 
 
-// ./server <num_servers> <runtime> <server_ip>
+// ./server <num_servers> <runtime> <server_ip> <message_size>
 int main(int argc, char const *argv[]) {
 
 	int num_servers = atoi(argv[1]);
 	int runtime = atoi(argv[2]);
 	char* ip_addr = (char*)argv[3];
+	int message_size = atoi(argv[4]);
 	//char* ip_addr = "10.16.224.68";
 
 
@@ -263,7 +267,7 @@ int main(int argc, char const *argv[]) {
 
 	//start_server(start_port, ip_addr);
 
-	start_n_servers(num_servers, start_port, runtime, ip_addr);
+	start_n_servers(num_servers, start_port, runtime, ip_addr, message_size);
 
 	//start_one_server(num_servers, start_port, runtime, ip_addr);
 
