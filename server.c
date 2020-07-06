@@ -31,11 +31,16 @@ void accept_connection(int new_socket, char* keep_alive ) {
 
 	int read_size = 0;
 	char* message = "ok";
-	while(read(new_socket, buffer, buffer_size)) {
-		//printf("read: %i\n", read_size);
-		int send_val = send(new_socket, message, strlen(message), 0);
+	int total_read = 0;
+	while(read_size = read(new_socket, buffer, buffer_size)) {
+		total_read += read_size;
+		printf("total_read: %i\n", total_read);
+		if (total_read >= 20000) {
+			int send_val = send(new_socket, message, strlen(message), 0);
+			total_read = 0;
+			//printf("send_val: %i\n", send_val);
+		}
 		//sleep(0.1);
-		printf("send_val: %i\n", send_val);
 	}
 	/*while(1) {
 		read_size = read(new_socket, buffer, buffer_size);
