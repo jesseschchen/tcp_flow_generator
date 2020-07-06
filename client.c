@@ -163,7 +163,7 @@ void* send_message_loop(void* msi) {
 			printf("failed to send %i\n", num_sent);
 		}
 		else {
-			//int bytes_read = read(client_fd, recv_buffer, 2048);
+			int bytes_read = read(client_fd, recv_buffer, 2048);
 		}
 
 		num_sent += 1;
@@ -243,35 +243,11 @@ void send_n_messages(int num_messages, int start_port, int message_size, int tim
 		pthread_create(&t_thread, NULL, timer_thread, (void*)&ti);
 	}
 
-	/*int num_sent = 0;
-	char* rand_message = read_random_bytes(message_size);
-	while (keep_alive == 1) {
-		for (int i = 0; i < num_messages; i++) {
-
-			num_sent += 1;
-			int port = start_port + i;
-
-
-			printf("num_sent:%i: %i\n", port, num_sent);
-
-
-			int client_fd = open_connection(ip_addr, port);
-
-			if (send(client_fd, rand_message, message_size+1, 0) < 0) {
-				printf("failed to send %i\n", num_sent);
-			}
-
-			if (shutdown(client_fd, SHUT_WR) != 0) {
-				close(client_fd);
-				printf("unable to shutdown properly\n");
-			}
-			else {
-				close(client_fd);
-				printf("proper shutdown\n");
-			}
-		}
+	for (int i = 0; i < num_messages; i++){
+		printf("prejoin %i\n", i);
+		pthread_join(threads[i], NULL);
+		printf("postjoin %i\n", i);
 	}
-	free(rand_message);*/
 
 	pthread_exit(NULL);
 }

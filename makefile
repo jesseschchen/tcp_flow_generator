@@ -1,6 +1,6 @@
 CC = gcc
 OPTIMIZE = -O2
-CFLAGS = $(OPTIMIZE) -pthread
+CFLAGS = $(OPTIMIZE) -pthread -g
 
 
 

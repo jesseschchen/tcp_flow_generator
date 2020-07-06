@@ -27,12 +27,15 @@ void accept_connection(int new_socket, char* keep_alive ) {
 	buffer[0] = '\0';
 
 	//printf("preread buffer: %s\n", buffer);
+	printf("new_socket: %i\n", new_socket);
 
 	int read_size = 0;
 	char* message = "ok";
-	while(recv(new_socket, buffer, buffer_size, 0)) {
+	while(read(new_socket, buffer, buffer_size)) {
 		//printf("read: %i\n", read_size);
-		//send(new_socket, message, strlen(message), 0);
+		int send_val = send(new_socket, message, strlen(message), 0);
+		//sleep(0.1);
+		printf("send_val: %i\n", send_val);
 	}
 	/*while(1) {
 		read_size = read(new_socket, buffer, buffer_size);
@@ -45,7 +48,7 @@ void accept_connection(int new_socket, char* keep_alive ) {
 	}*/
 
 	if(shutdown(new_socket, SHUT_RD) != 0) {
-		close(new_socket);
+		//close(new_socket);
 		printf("failed shutdown\n");
 	}
 	else {
@@ -132,7 +135,7 @@ void* start_server(void* si) {
 			printf("connection ended: %i: %i\n", port, num_connections);
 		}
 	//}
-	//pthread_exit(NULL);
+	pthread_exit(NULL);
 	//return server_fd;
 }
 
@@ -164,11 +167,12 @@ void start_n_servers(int num_servers, int start_port, int runtime, char* ip_addr
 	}
 
 	for (int i = 0; i < num_servers; i++) {
-		pthread_join(threads[i], NULL);
+		int join_val = pthread_join(threads[i], NULL);
+		printf("thread %i joined\n", i);
 	}
 
 
-	//pthread_exit(NULL);
+	pthread_exit(NULL);
 }
 
 
@@ -258,10 +262,7 @@ int main(int argc, char const *argv[]) {
 
 	//start_one_server(num_servers, start_port, runtime, ip_addr);
 
-	for (int i = 0; i < num_servers; i++) {
-		int a = 0;//start_server(start_port + i, ip_addr);
-	}
-
+	return 0;
 
 	
 }
