@@ -20,7 +20,7 @@ typedef struct timer_info {
 } timer_info;
 
 
-void accept_connection(int new_socket) {
+void accept_connection(int new_socket, char* keep_alive ) {
 	int buffer_size = 2048;
 	//char buffer[buffer_size];
 	char* buffer = malloc(buffer_size);
@@ -30,10 +30,19 @@ void accept_connection(int new_socket) {
 
 	int read_size = 0;
 	char* message = "ok";
-	while(read_size = read(new_socket, buffer, buffer_size)) {
-		send(new_socket, message, strlen(message), 0);
+	while(recv(new_socket, buffer, buffer_size, 0)) {
 		//printf("read: %i\n", read_size);
+		//send(new_socket, message, strlen(message), 0);
 	}
+	/*while(1) {
+		read_size = read(new_socket, buffer, buffer_size);
+		if (read_size != 0) {
+			send(new_socket, message, strlen(message), 0);
+		}
+		else {
+			printf("read size == 0\n");
+		}
+	}*/
 
 	if(shutdown(new_socket, SHUT_RD) != 0) {
 		close(new_socket);
@@ -47,13 +56,14 @@ void accept_connection(int new_socket) {
 	//printf("message: %s\n\n", buffer);
 
 	free(buffer);
-	// what to do once connection is accepted
 }
 
 void* timer_thread(void* ti) {
 	timer_info* tim_inf = (timer_info*) ti;
 	int t = tim_inf->time;
 	char* keep_alive = tim_inf->keep_alive;
+
+	printf("timer_created\n");
 
 	sleep(t);
 	*keep_alive = 0;
@@ -108,19 +118,21 @@ void* start_server(void* si) {
 
 
 	//accept new connections
-	while ((new_socket = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen)) && (*keep_alive == 1)) {
+	//while (*keep_alive == 1) {
+		new_socket = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen);
 		if (new_socket < 0) {
-			perror("accept failed");
-			exit(EXIT_FAILURE);			
+			//perror("accept failed");
+			//exit(EXIT_FAILURE);			
 		}
 		else {
 			// accept is successful
 			num_connections += 1;
 			printf("connection accepted:%i: %i\n", port, num_connections);
-			accept_connection(new_socket);
+			accept_connection(new_socket, keep_alive);
+			printf("connection ended: %i: %i\n", port, num_connections);
 		}
-	}
-	pthread_exit(NULL);
+	//}
+	//pthread_exit(NULL);
 	//return server_fd;
 }
 
@@ -151,8 +163,12 @@ void start_n_servers(int num_servers, int start_port, int runtime, char* ip_addr
 		pthread_create(&threads[num_servers], NULL, timer_thread, (void*)&ti);
 	}
 
+	for (int i = 0; i < num_servers; i++) {
+		pthread_join(threads[i], NULL);
+	}
 
-	pthread_exit(NULL);
+
+	//pthread_exit(NULL);
 }
 
 
@@ -204,7 +220,7 @@ void start_one_server(int num_servers, int start_port, int runtime, char* ip_add
 			// accept is successful
 			num_connections += 1;
 			//printf("connection accepted:%i: %i\n", port, num_connections);
-			accept_connection(new_socket);
+			accept_connection(new_socket, &keep_alive);
 		}
 	}
 
@@ -227,7 +243,6 @@ void start_one_server(int num_servers, int start_port, int runtime, char* ip_add
 
 // ./server <num_servers> <runtime> <server_ip>
 int main(int argc, char const *argv[]) {
-
 
 	int num_servers = atoi(argv[1]);
 	int runtime = atoi(argv[2]);

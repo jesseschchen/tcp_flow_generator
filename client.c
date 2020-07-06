@@ -162,7 +162,9 @@ void* send_message_loop(void* msi) {
 		if (send(client_fd, message, message_size, 0) < 0) {
 			printf("failed to send %i\n", num_sent);
 		}
-		int bytes_read = read(client_fd, recv_buffer, 2048);
+		else {
+			//int bytes_read = read(client_fd, recv_buffer, 2048);
+		}
 
 		num_sent += 1;
 		printf("num_sent:%i: %i\n", port, num_sent);
