@@ -153,7 +153,7 @@ void* send_message_loop(void* msi) {
 	
 	char* recv_buffer = malloc(2048);
 
-	/*// repeatedly send message
+	// repeatedly send message
 	while (*keep_alive == 1) {
 		//create message
 		int message_id = (int)message_id_0 + num_sent;
@@ -170,11 +170,11 @@ void* send_message_loop(void* msi) {
 		num_sent += 1;
 		printf("num_sent:%i: %i\n", port, num_sent);
 		//sleep(0.01);
-	}*/
+	}
 
 	// send 2 messages back to back, then sleep for 3 seconds
 	// simulate ODL control messages
-	while (*keep_alive == 1) {
+	/*while (*keep_alive == 1) {
 		//create message
 		for (int i = 0; i < 2; i++) {
 			int message_id = (int)message_id_0 + num_sent;
@@ -192,7 +192,7 @@ void* send_message_loop(void* msi) {
 			printf("num_sent:%i: %i\n", port, num_sent);
 		}
 		sleep(3);
-	}
+	}*/
 
 	// tcp FIN packet
 	if (shutdown(client_fd, SHUT_WR) != 0) {
