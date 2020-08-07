@@ -62,8 +62,6 @@ void* timer_thread(void* ti) {
 	int t = tim_inf->time;
 	char* keep_alive = tim_inf->keep_alive;
 
-	printf("timer_created: %i\n", t);
-
 	sleep(t);
 	*keep_alive = 0;
 
@@ -112,7 +110,7 @@ void* start_tcp_server(void* si) {
 		exit(EXIT_FAILURE);
 	}
 
-	printf("server started on %i\n", port);
+	printf("TCP server started on %i\n", port);
 
 	int num_connections = 0;
 
@@ -126,9 +124,9 @@ void* start_tcp_server(void* si) {
 		else {
 			// accept is successful
 			num_connections += 1;
-			printf("connection accepted:%i: %i\n", port, num_connections);
+			printf("connection accepted: %i\n", port);
 			long total_read = accept_connection(new_socket, message_size);
-			printf("connection ended: %i: %li\n", port, total_read);
+			printf("connection ended: %i: %li bytes received\n", port, total_read);
 		}
 	//}
 	pthread_exit(NULL);
@@ -162,24 +160,33 @@ void* start_udp_server(void* si) {
 		exit(EXIT_FAILURE);
 	}
 
-	printf("server started on %i\n", port);
+	printf("UDP server started on %i\n", port);
 
 	int n;
 	int buffer_size = 4096;
 	char* msg_buffer = malloc(buffer_size);
+	long total_read = 0;
 
 	while(*keep_alive == 1) {
 		// recvfrom() is used when want to know src of messages
 		//n = recvfrom(server_fd, msg_buffer, buffer_size, 0, (struct sockaddr*)&address, (socklen_t*)&addrlen);
-		n = recv(server_fd, msg_buffer, buffer_size, 0);
+		// udp will drop the rest of packets taht hre not fully read
+		n = recv(server_fd, msg_buffer, buffer_size, MSG_DONTWAIT);
+
+		// avoids adding -1 to total_read since recv() is non-blocking
+		if (n >= 0) 
+			total_read += n;
 
 		msg_buffer[8] = '\0';
-		printf("recv %i\n", n);
-		printf("%s\n",msg_buffer);
+		//printf("read: %i\n", n);
+		//printf("msg: %s\n", msg_buffer);
 	}
 
 
+	printf("server closed: >%li bytes received\n", total_read);
+
 	free(msg_buffer);
+	pthread_exit(NULL);
 }
 
 void start_n_servers(int num_servers, int start_port, int runtime, char* ip_addr, int message_size, int tcp) {

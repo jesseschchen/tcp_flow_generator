@@ -90,17 +90,11 @@ int open_tcp_connection(char* ip_addr, int port) {
 
 int open_udp_connection(char* ip_addr, int port) {
 	int client_fd;
-	struct sockaddr_in address;
 
 	if ((client_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		perror("socket creation error");
 		exit(EXIT_FAILURE);
 	}
-
-	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = inet_addr(ip_addr);
-	address.sin_port = htons(port);
-
 	return client_fd;
 }
 
@@ -247,7 +241,6 @@ void* timer_thread(void* ti) {
 	int t = tim_inf->time;
 	char* keep_alive = tim_inf->keep_alive;
 
-	printf("sleep %i\n", t);
 	sleep(t);
 	*keep_alive = 0;
 
@@ -306,48 +299,39 @@ void send_n_messages(int num_messages, int start_port, int message_size, int tim
 void send_n_seq_messages(int num_messages, int start_port, int message_size, int time, char* ip_addr, int tcp) {
 	char keep_alive = (char) 1;
 
-	
 
 	int client_fds[num_messages];
 	struct sockaddr_in addresses[num_messages];
 
-	// open each tcp connection
+	// open each connection
 	int port;
 	for (int i = 0; i < num_messages; i++) {
 		port = start_port + i;
-
-		if ((client_fds[i] = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-			perror("socket creation error");
-			exit(EXIT_FAILURE);
-		} 
+		if (tcp) {
+			client_fds[i] = open_tcp_connection(ip_addr, port);
+		}
+		else {
+			client_fds[i] = open_udp_connection(ip_addr, port);
+		}
 		addresses[i].sin_family = AF_INET;
 		addresses[i].sin_addr.s_addr = inet_addr(ip_addr);
 		addresses[i].sin_port = htons(port);
-
-		if (connect(client_fds[i], (struct sockaddr*)&addresses[i], sizeof(addresses[i])) < 0) {
-			printf("failed port: %i]n", port);
-			perror("connect failed");
-			exit(EXIT_FAILURE);
-		}
-		else {
-			printf("connected: %i\n", port);
-		}
-
+		printf("opened port %i connection\n", port);
 	}
-	printf("opened all connections\n\n");
 
 
 	// about to start sending data
+	// loop variables
 	char* random_bytes = read_random_bytes(message_size);
 	char message_id_0 = (char) 0;
 	int num_sent = 0;
 	int message_id;
+	int send_val;
 
 	// start timer thread
 	struct timer_info ti;
 	if (time != 0) {
 		ti.time = time;
-		printf("ti.time = %i\n", ti.time);
 		ti.keep_alive = &keep_alive;
 		pthread_t t_thread;
 		pthread_create(&t_thread, NULL, timer_thread, (void*)&ti);
@@ -355,35 +339,39 @@ void send_n_seq_messages(int num_messages, int start_port, int message_size, int
 
 	// send message loop
 	while (keep_alive == 1) {
-		printf("enter keep_alive\n");
 		for (int i = 0; i < num_messages; i++) {
 			message_id = (int)message_id_0 + num_sent;
 			char* message = create_message(message_size, (char*)&message_id, random_bytes);
 
-			if (send(client_fds[i], message, message_size, 0) < 0) {
+			if (tcp) {
+				send_val = send(client_fds[i], message, message_size, 0);
+			}
+			else {
+				send_val = sendto(client_fds[i], message, message_size, 0, (struct sockaddr*) &addresses[i], sizeof(addresses[i]));
+			}
+
+			if (send_val < 0) {
 				printf("failed to send%i \n", num_sent);
 			}
 			num_sent += 1;
 		}	
-		printf("keep_alive: %i\n", keep_alive);
 	}
 	
 
 	// shut down all connections
 	for (int i = 0; i < num_messages; i++) {
-		if (shutdown(client_fds[i], SHUT_WR) != 0) {
-			close(client_fds[i]);
-			printf("unable to shutdown properly\n");
+		if (tcp) {
+			if (shutdown(client_fds[i], SHUT_WR) != 0) {
+				printf("unable to shutdown properly\n");
+			}
 		}
-		else {
-			close(client_fds[i]);
-			printf("proper shutdown\n");
-		}
+		close(client_fds[i]);
+		printf("proper shutdown: %i\n", start_port + i);
 	}
 
 
 	free(random_bytes);
-	//pthread_exit(NULL);
+	pthread_exit(NULL);
 
 
 }
