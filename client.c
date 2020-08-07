@@ -296,6 +296,7 @@ void send_n_messages(int num_messages, int start_port, int message_size, int tim
 
 
 // non mulithreading version of send_n_messages
+// USE THIS ONE: AVOIDS CPU SCHEDULING PROBLEMS
 void send_n_seq_messages(int num_messages, int start_port, int message_size, int time, char* ip_addr, int tcp) {
 	char keep_alive = (char) 1;
 
@@ -316,8 +317,10 @@ void send_n_seq_messages(int num_messages, int start_port, int message_size, int
 		addresses[i].sin_family = AF_INET;
 		addresses[i].sin_addr.s_addr = inet_addr(ip_addr);
 		addresses[i].sin_port = htons(port);
-		printf("opened port %i connection\n", port);
+		if (!tcp) 
+			printf("opened port %i connection\n", port);
 	}
+	printf("opened all connections\n")
 
 
 	// about to start sending data
