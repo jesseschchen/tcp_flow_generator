@@ -320,7 +320,7 @@ void send_n_seq_messages(int num_messages, int start_port, int message_size, int
 		if (!tcp) 
 			printf("opened port %i connection\n", port);
 	}
-	printf("opened all connections\n")
+	printf("opened all connections\n");
 
 
 	// about to start sending data
