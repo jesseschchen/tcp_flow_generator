@@ -65,6 +65,8 @@ void* timer_thread(void* ti) {
 	sleep(t);
 	*keep_alive = 0;
 
+	exit(0);
+
 	pthread_exit(NULL);
 }
 
@@ -163,7 +165,7 @@ void* start_udp_server(void* si) {
 	printf("UDP server started on %i\n", port);
 
 	int n;
-	int buffer_size = 4096;
+	int buffer_size = 8192;
 	char* msg_buffer = malloc(buffer_size);
 	long total_read = 0;
 
@@ -171,11 +173,13 @@ void* start_udp_server(void* si) {
 		// recvfrom() is used when want to know src of messages
 		//n = recvfrom(server_fd, msg_buffer, buffer_size, 0, (struct sockaddr*)&address, (socklen_t*)&addrlen);
 		// udp will drop the rest of packets taht hre not fully read
-		n = recv(server_fd, msg_buffer, buffer_size, MSG_DONTWAIT);
+		//n = recv(server_fd, msg_buffer, buffer_size, MSG_DONTWAIT);
+		n = recv(server_fd, msg_buffer, buffer_size, 0);
 
 		// avoids adding -1 to total_read since recv() is non-blocking
 		if (n >= 0) 
 			total_read += n;
+		printf("tota_read: %li\n", total_read);
 
 		msg_buffer[8] = '\0';
 		//printf("read: %i\n", n);
