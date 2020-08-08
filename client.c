@@ -70,8 +70,6 @@ int open_tcp_connection(char* ip_addr, int port, int server_port) {
 		exit(EXIT_FAILURE);
 	}
 
-	if 
-
 	// initialize the address :<ip_addr>:<port_num>
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -79,7 +77,7 @@ int open_tcp_connection(char* ip_addr, int port, int server_port) {
 
 
 	// bind fd to particular ip_addr and port
-	if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
+	if (bind(client_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
 		perror("bind failed");
 		exit(EXIT_FAILURE);
 	}
@@ -103,6 +101,8 @@ int open_tcp_connection(char* ip_addr, int port, int server_port) {
 
 int open_udp_connection(char* ip_addr, int port) {
 	int client_fd;
+	struct sockaddr_in address;
+
 
 	//create a socket
 	if ((client_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
@@ -115,7 +115,7 @@ int open_udp_connection(char* ip_addr, int port) {
 	address.sin_port = htons(port);
 
 	// bind fd to particular ip_addr and port
-	if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
+	if (bind(client_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
 		perror("bind failed");
 		exit(EXIT_FAILURE);
 	}
@@ -183,7 +183,7 @@ void* send_tcp_message_loop(void* msi) {
 	char* random_bytes = read_random_bytes(message_size);
 
 	// tcp SYN packet
-	int client_fd = open_tcp_connection(ip_addr, port);
+	int client_fd = open_tcp_connection(ip_addr, port, 26000); // TEMPORARY
 	char message_id_0 = (char)0; //read_random_bytes(4);
 	//char* message_id_0 = "0000";
 	
@@ -334,7 +334,8 @@ void send_n_seq_messages(int num_messages, int start_port, int message_size, int
 	for (int i = 0; i < num_messages; i++) {
 		port = start_port + i;
 		if (tcp) {
-			client_fds[i] = open_tcp_connection(ip_addr, port, server_port);
+			//client_fds[i] = open_tcp_connection(ip_addr, port, start_port);
+			client_fds[i] = open_tcp_connection(ip_addr, port, 26001); // LOCAL TESTING ONLY
 		}
 		else {
 			client_fds[i] = open_udp_connection(ip_addr, port);
@@ -429,7 +430,7 @@ void single_thread_send_messages(int num_messages, int start_port, int message_s
 			printf("num_sent:%i: %i\n", port, num_sent);
 
 
-			int client_fd = open_tcp_connection(ip_addr, port);
+			int client_fd = open_tcp_connection(ip_addr, port, 26000); //TEMPORARY
 
 			if (send(client_fd, rand_message, message_size+1, 0) < 0) {
 				printf("failed to send %i\n", num_sent);

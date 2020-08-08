@@ -21,3 +21,8 @@ client: client.c
 	@$(CC) $(CFLAGS) -o client client.c
 	@chmod +x client
 	@echo "finished building client."
+
+clean: 
+	@echo "cleaning..."
+	@rm -f client server
+	@echo "finished cleaning."

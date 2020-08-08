@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -8,12 +9,21 @@
 #include <pthread.h>
 
 
+typedef struct receiv_info {
+	int num_connections;
+	int* connection_fds;
+	char* fd_validity;
+	char* keep_alive;
+} receiv_info;
+
+
 typedef struct server_info {
 	int port;
 	char* ip_addr;
 	char* keep_alive;
 	int message_size;
 } server_info;
+
 
 typedef struct timer_info {
 	int time;
@@ -118,7 +128,7 @@ void* start_tcp_server(void* si) {
 
 	//accept new connections
 	//while (*keep_alive == 1) {
-		new_socket = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen);
+		new_socket = accept(server_fd, NULL, NULL);
 		if (new_socket < 0) {
 			//perror("accept failed");
 			//exit(EXIT_FAILURE);			
@@ -193,21 +203,142 @@ void* start_udp_server(void* si) {
 	pthread_exit(NULL);
 }
 
+int check_valid_connections(char* fd_validity, int num_connections) {
+	int valid_connections = 0;
+	for (int i = 0; i < num_connections; i++) {
+		if (fd_validity[i] == 1) {
+			valid_connections += 1;
+		}
+	}
+	return valid_connections;
+}
+
+void* receiv_thread(void* ri) {
+	receiv_info* rec_inf = (receiv_info*) ri;
+	int num_connections = rec_inf->num_connections;
+	int* connection_fds = rec_inf->connection_fds;
+	char* fd_validity = rec_inf->fd_validity;
+	char* keep_alive = rec_inf->keep_alive;
+
+	int buffer_size = 4096;
+	char* buffer = malloc(buffer_size);
+
+	int read_val;
+	int valid_connections;
+	while(*keep_alive == 1) {
+		for (int i = 0; i < num_connections; i++) {
+			// if connection is still open
+			if (fd_validity[i]) {
+				read_val = recv(connection_fds[i], buffer, buffer_size, MSG_DONTWAIT);
+				if (read_val == 0) {
+					if(shutdown(connection_fds[i], SHUT_RD) != 0) {
+						printf("failed shutdown\n");
+					}
+					else {
+						close(connection_fds[i]);
+						fd_validity[i] = (char) 0;
+						valid_connections = check_valid_connections(fd_validity, num_connections);
+						if (!valid_connections) {
+							exit(0);
+						}
+					}
+				}
+				printf("read_val: %i\n", read_val);
+			}
+		}
+	}
+}
+
+// prep server sockets for sequentially connection handling
+int do_tcp_server_prep(char* ip_addr, int port) {
+	struct sockaddr_in address;
+	int server_fd;
+
+	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)  {
+		perror("socket failed");
+		exit(EXIT_FAILURE);
+	}
+
+	address.sin_family = AF_INET;
+	address.sin_addr.s_addr = inet_addr(ip_addr);
+	address.sin_port = htons(port);
+
+	if (bind(server_fd, (struct sockaddr*) &address, sizeof(address)) < 0) {
+		perror("bind failed");
+		exit(EXIT_FAILURE);
+	}
+
+	if (listen(server_fd, 65) < 0) {
+		perror("listen failed");
+		exit(EXIT_FAILURE);
+	}
+
+	printf("TCP server on port %i prepped\n", port);
+	return server_fd;
+}
+
+// starts sequential servers
+// avoids cpu scheduling problems/starvations
+void start_n_seq_servers(int num_servers, int start_port, int runtime, char* ip_addr, int message_size, int tcp) {
+	char keep_alive = (char) 1;
+	int server_fds[num_servers];
+	int num_connections = 0;
+	int connection_fds[num_servers];
+
+	pthread_t receiv_thread;
+	struct receiv_info ri;
+	ri.num_connections = num_connections;
+	ri.connection_fds = (int*)&connection_fds;
+
+
+
+
+	int port;
+	for (int i = 0; i < num_servers; i++) {
+		port = start_port + i;
+		if (tcp) {
+			server_fds[i] = do_tcp_server_prep(ip_addr, port);
+		}
+		else {
+			// do_udp_server_prep(ip_addr, port);
+		}
+	}
+
+	//listen/accept() forever loop
+	int new_socket;
+	//while(keep_alive == 1) {
+		for (int i = 0; i < num_servers; i++) {
+			if (tcp) {
+				if ((new_socket = accept(server_fds[i], NULL, NULL)) > 0) {
+					//add new_socket to list of open connections to be read()/recv()s from 
+					// if accept() works, add new_socket to a structure that can be read by receiv_thread
+
+					//close old server socket
+					close(server_fds[i]);
+
+					connection_fds[num_connections] = new_socket;
+					num_connections += 1;
+				}
+				else {
+					//keep looping i guess
+				}
+			}
+			else { // UDP SERVERS
+				// UDP SERVER PLACEHOLDERS
+			}
+		}
+	//}
+}
+
+
+//mulithreading 
 void start_n_servers(int num_servers, int start_port, int runtime, char* ip_addr, int message_size, int tcp) {
 	pthread_t threads[num_servers+1];
 	struct server_info si[num_servers];
-	struct server_info si_0;
 
 	char keep_alive = (char) 1;
 
-	si_0.port = start_port;
-	si_0.ip_addr = ip_addr;
-	si_0.keep_alive = &keep_alive;
-	si_0.message_size = message_size;
 
-	if (tcp) {
-		pthread_create()
-	}
 
 
 	for(int i = 0; i < num_servers; i++) {
@@ -231,8 +362,8 @@ void start_n_servers(int num_servers, int start_port, int runtime, char* ip_addr
 
 
 	// runtime = 0 means run forever
+	struct timer_info ti;
 	if(runtime != 0) {
-		struct timer_info ti;
 		ti.time = runtime;
 		ti.keep_alive = &keep_alive;
 		pthread_create(&threads[num_servers], NULL, timer_thread, (void*)&ti);
@@ -247,8 +378,64 @@ void start_n_servers(int num_servers, int start_port, int runtime, char* ip_addr
 	pthread_exit(NULL);
 }
 
-void start_one_server_n_receiv(int num_threads, int start_port, int runtime, char* ip_addr, int message_size, int tcp) {
-	
+
+// successor to start_n_seq_servers 
+// USE THIS ONE
+void start_one_server_n_receiv(int num_threads, int num_connections, int start_port, int runtime, char* ip_addr, int message_size, int tcp) {
+	char keep_alive = (char) 1;
+	char fd_validity[num_connections];
+	int connection_fds[num_connections];
+	// prep fd_validity
+	for (int i = 0; i < num_connections; i++) {
+		fd_validity[i] = (char) 0;
+	}
+
+
+	// start num_threads receiv_threads
+	pthread_t receiv_threads[num_threads];
+	struct receiv_info ri;
+	ri.num_connections = num_connections;
+	ri.connection_fds = (int*)&connection_fds;
+	ri.fd_validity = (char*)&fd_validity;
+	ri.keep_alive = &keep_alive;
+	for (int i = 0; i < num_threads; i++) {
+		pthread_create(&receiv_threads[i], NULL, receiv_thread, (void*)&ri);
+		printf("created receiv_thread:%i\n", i);
+	}
+
+
+
+	// timer thread
+	pthread_t t_thread;
+	struct timer_info ti;
+	if(runtime != 0) {
+		ti.time = runtime;
+		ti.keep_alive = &keep_alive;
+		pthread_create(&t_thread, NULL, timer_thread, (void*)&ti);
+	}
+	// opens server
+	int server_fd;
+	if (tcp) {
+		server_fd = do_tcp_server_prep(ip_addr, 26001); // LOCAL TESTING ONLY
+		//server_fd = do_tcp_server_prep(ip_addr, start_port);
+	}
+
+
+	// accept tcp connections loop
+	struct sockaddr_in client_address;
+	int len = sizeof(client_address);
+	int new_socket;
+	int connection_id;
+	while (keep_alive == 1) {
+		new_socket = accept(server_fd, (struct sockaddr*)&client_address, &len);
+		printf("connection accepted!\n");
+		connection_id = ntohs(client_address.sin_port) - start_port;
+		printf("got connection id: %i\n", connection_id);
+
+		connection_fds[connection_id] = new_socket;
+		fd_validity[connection_id] = (char)1;
+	}
+	pthread_exit(NULL);
 }
 
 
@@ -339,8 +526,11 @@ int main(int argc, char const *argv[]) {
 	//start_server(start_port, ip_addr);
 
 	//int tcp = 0;
+	int num_threads = 2;
 
-	start_n_servers(num_servers, start_port, runtime, ip_addr, message_size, tcp);
+	//start_n_servers(num_servers, start_port, runtime, ip_addr, message_size, tcp);
+
+	start_one_server_n_receiv(num_threads, num_servers, start_port, runtime, ip_addr, message_size, tcp);
 
 	//start_one_server(num_servers, start_port, runtime, ip_addr);
 
