@@ -13,6 +13,7 @@ typedef struct receiv_info {
 	int num_connections;
 	int* connection_fds;
 	char* fd_validity;
+	long* recv_data_count;
 	char* keep_alive;
 } receiv_info;
 
@@ -218,6 +219,7 @@ void* receiv_thread(void* ri) {
 	int num_connections = rec_inf->num_connections;
 	int* connection_fds = rec_inf->connection_fds;
 	char* fd_validity = rec_inf->fd_validity;
+	long* recv_data_count = rec_inf->recv_data_count;
 	char* keep_alive = rec_inf->keep_alive;
 
 	int buffer_size = 4096;
@@ -230,7 +232,7 @@ void* receiv_thread(void* ri) {
 			// if connection is still open
 			if (fd_validity[i]) {
 				read_val = recv(connection_fds[i], buffer, buffer_size, MSG_DONTWAIT);
-				if (read_val == 0) {
+				if (read_val == 0) { // connection is ended
 					if(shutdown(connection_fds[i], SHUT_RD) != 0) {
 						printf("failed shutdown\n");
 					}
@@ -239,14 +241,19 @@ void* receiv_thread(void* ri) {
 						fd_validity[i] = (char) 0;
 						valid_connections = check_valid_connections(fd_validity, num_connections);
 						if (!valid_connections) {
+							for (int j = 0; j < num_connections; j++) {
+								printf("port %i: %li\n", i, recv_data_count[i]);
+							}
 							exit(0);
 						}
 					}
 				}
-				printf("read_val: %i\n", read_val);
+				recv_data_count[i] += read_val;
+				//printf("read_val: %i\n", read_val);
 			}
 		}
 	}
+	pthread_exit(NULL);
 }
 
 // prep server sockets for sequentially connection handling
@@ -385,10 +392,11 @@ void start_one_server_n_receiv(int num_threads, int num_connections, int start_p
 	char keep_alive = (char) 1;
 	char fd_validity[num_connections];
 	int connection_fds[num_connections];
-	// prep fd_validity
 	for (int i = 0; i < num_connections; i++) {
+		// prep fd_validity
 		fd_validity[i] = (char) 0;
 	}
+	long recv_data_count[num_connections];
 
 
 	// start num_threads receiv_threads
@@ -397,6 +405,7 @@ void start_one_server_n_receiv(int num_threads, int num_connections, int start_p
 	ri.num_connections = num_connections;
 	ri.connection_fds = (int*)&connection_fds;
 	ri.fd_validity = (char*)&fd_validity;
+	ri.recv_data_count = (long*)&recv_data_count;
 	ri.keep_alive = &keep_alive;
 	for (int i = 0; i < num_threads; i++) {
 		pthread_create(&receiv_threads[i], NULL, receiv_thread, (void*)&ri);
