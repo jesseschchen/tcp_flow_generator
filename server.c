@@ -416,8 +416,8 @@ void start_one_server_n_receiv(int num_threads, int num_connections, int start_p
 	// opens server
 	int server_fd;
 	if (tcp) {
-		server_fd = do_tcp_server_prep(ip_addr, 26001); // LOCAL TESTING ONLY
-		//server_fd = do_tcp_server_prep(ip_addr, start_port);
+		//server_fd = do_tcp_server_prep(ip_addr, 26001); // LOCAL TESTING ONLY
+		server_fd = do_tcp_server_prep(ip_addr, start_port);
 	}
 
 
