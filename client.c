@@ -334,8 +334,8 @@ void send_n_seq_messages(int num_messages, int start_port, int message_size, int
 	for (int i = 0; i < num_messages; i++) {
 		port = start_port + i;
 		if (tcp) {
-			//client_fds[i] = open_tcp_connection(ip_addr, port, start_port);
-			client_fds[i] = open_tcp_connection(ip_addr, port, 26001); // LOCAL TESTING ONLY
+			client_fds[i] = open_tcp_connection(ip_addr, port, start_port);
+			//client_fds[i] = open_tcp_connection(ip_addr, port, 26001); // LOCAL TESTING ONLY
 		}
 		else {
 			client_fds[i] = open_udp_connection(ip_addr, port);
