@@ -242,7 +242,7 @@ void* receiv_thread(void* ri) {
 						valid_connections = check_valid_connections(fd_validity, num_connections);
 						if (!valid_connections) {
 							for (int j = 0; j < num_connections; j++) {
-								printf("port %i: %li\n", i, recv_data_count[i]);
+								printf("port %i: %li\n", j, recv_data_count[j]);
 							}
 							exit(0);
 						}

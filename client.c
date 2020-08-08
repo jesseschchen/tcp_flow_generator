@@ -73,8 +73,8 @@ int open_tcp_connection(char* ip_addr, int port, int server_port) {
 	// initialize the address :<ip_addr>:<port_num>
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = htonl(INADDR_ANY);
-	address.sin_port = htons(port);
-
+	address.sin_port = htons(port+1);
+	printf("port+1: %i\n", (port+1));
 
 	// bind fd to particular ip_addr and port
 	if (bind(client_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
