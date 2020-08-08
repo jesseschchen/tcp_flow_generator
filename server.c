@@ -196,13 +196,24 @@ void* start_udp_server(void* si) {
 void start_n_servers(int num_servers, int start_port, int runtime, char* ip_addr, int message_size, int tcp) {
 	pthread_t threads[num_servers+1];
 	struct server_info si[num_servers];
+	struct server_info si_0;
 
 	char keep_alive = (char) 1;
+
+	si_0.port = start_port;
+	si_0.ip_addr = ip_addr;
+	si_0.keep_alive = &keep_alive;
+	si_0.message_size = message_size;
+
+	if (tcp) {
+		pthread_create()
+	}
 
 
 	for(int i = 0; i < num_servers; i++) {
 		// server info struct
-		si[i].port = start_port + i;
+		//si[i].port = start_port + i; // start unique servers
+		si[i].port = start_port; // start on one port
 		si[i].ip_addr = ip_addr;
 		si[i].keep_alive = &keep_alive;
 		si[i].message_size = message_size;
@@ -235,6 +246,12 @@ void start_n_servers(int num_servers, int start_port, int runtime, char* ip_addr
 
 	pthread_exit(NULL);
 }
+
+void start_one_server_n_receiv(int num_threads, int start_port, int runtime, char* ip_addr, int message_size, int tcp) {
+	
+}
+
+
 
 // not used
 void start_one_server(int num_servers, int start_port, int runtime, char* ip_addr) {

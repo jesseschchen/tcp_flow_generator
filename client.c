@@ -59,7 +59,7 @@ char* create_message(int num_bytes, char* message_id, char* random_bytes) {
 	return message;
 }
 
-int open_tcp_connection(char* ip_addr, int port) {
+int open_tcp_connection(char* ip_addr, int port, int server_port) {
 	int client_fd;
 	struct sockaddr_in address;
 
@@ -70,10 +70,23 @@ int open_tcp_connection(char* ip_addr, int port) {
 		exit(EXIT_FAILURE);
 	}
 
-	// initialize the tcp:<ip_addr>:<port_num>
+	if 
+
+	// initialize the address :<ip_addr>:<port_num>
 	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = inet_addr(ip_addr);
+	address.sin_addr.s_addr = htonl(INADDR_ANY);
 	address.sin_port = htons(port);
+
+
+	// bind fd to particular ip_addr and port
+	if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
+		perror("bind failed");
+		exit(EXIT_FAILURE);
+	}
+
+
+	address.sin_addr.s_addr = inet_addr(ip_addr);
+	address.sin_port = htons(server_port);
 
 	// connect to server
 	if (connect(client_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
@@ -91,10 +104,22 @@ int open_tcp_connection(char* ip_addr, int port) {
 int open_udp_connection(char* ip_addr, int port) {
 	int client_fd;
 
+	//create a socket
 	if ((client_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		perror("socket creation error");
 		exit(EXIT_FAILURE);
 	}
+
+	address.sin_family = AF_INET; // ipv4
+	address.sin_addr.s_addr = htonl(INADDR_ANY);
+	address.sin_port = htons(port);
+
+	// bind fd to particular ip_addr and port
+	if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
+		perror("bind failed");
+		exit(EXIT_FAILURE);
+	}
+
 	return client_fd;
 }
 
@@ -309,14 +334,14 @@ void send_n_seq_messages(int num_messages, int start_port, int message_size, int
 	for (int i = 0; i < num_messages; i++) {
 		port = start_port + i;
 		if (tcp) {
-			client_fds[i] = open_tcp_connection(ip_addr, port);
+			client_fds[i] = open_tcp_connection(ip_addr, port, server_port);
 		}
 		else {
 			client_fds[i] = open_udp_connection(ip_addr, port);
 		}
 		addresses[i].sin_family = AF_INET;
 		addresses[i].sin_addr.s_addr = inet_addr(ip_addr);
-		addresses[i].sin_port = htons(port);
+		addresses[i].sin_port = htons(start_port);
 		if (!tcp) 
 			printf("opened port %i connection\n", port);
 	}
