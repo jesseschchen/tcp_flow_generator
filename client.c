@@ -348,7 +348,7 @@ void send_n_seq_messages(int num_messages, int start_port, int message_size, int
 		}
 		addresses[i].sin_family = AF_INET;
 		addresses[i].sin_addr.s_addr = inet_addr(ip_addr);
-		addresses[i].sin_port = htons(start_port-1);
+		addresses[i].sin_port = htons(start_port);
 		if (!tcp) 
 			printf("opened port %i connection\n", port);
 	}
@@ -382,7 +382,7 @@ void send_n_seq_messages(int num_messages, int start_port, int message_size, int
 				send_val = send(client_fds[i], random_bytes, message_size, 0);
 			} else {
 				send_val = sendto(client_fds[i], random_bytes, message_size, 0, (struct sockaddr*) &addresses[i], sizeof(addresses[i]));
-				printf("sent %i\n", num_messages);
+				//printf("sent %i\n", num_messages);
 			}
 
 			if (send_val < 0) {
