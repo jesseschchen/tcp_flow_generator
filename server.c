@@ -14,6 +14,7 @@ typedef struct receiv_info {
 	int num_connections;
 	int connn_lo;
 	int connn_hi;
+	int message_size;
 	int* connection_fds;
 	char* fd_validity;
 	long* recv_data_count;
