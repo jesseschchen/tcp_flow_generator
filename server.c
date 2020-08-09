@@ -239,7 +239,6 @@ void* udp_receiv_thread(void* uri) {
 			total_read += n;
 			printf("total_read: %li\n", total_read);
 		}
-		//printf("recv: %i\n", n);
 	}
 	printf("keep_alive over\n");
 	free(buffer);
@@ -278,10 +277,13 @@ void* receiv_thread(void* ri) {
 						close(connection_fds[i]);
 						fd_validity[i] = (char) 0;
 						valid_connections = check_valid_connections(fd_validity, num_connections);
+						int total = 0;
 						if (!valid_connections) {
 							for (int j = 0; j < num_connections; j++) {
 								printf("port %i: %li\n", j, recv_data_count[j]);
+								total += recv_data_count[j];
 							}
+							printf("total data: %i\n", total);
 							printf("killing server\n");
 							free(buffer);
 							exit(0);
@@ -493,6 +495,14 @@ void start_one_server_n_receiv(int num_threads, int num_connections, int start_p
 			connection_fds[connection_id] = new_socket;
 			fd_validity[connection_id] = (char)1;
 		}
+	}
+	
+	// JOIN THREADS
+	// mostly used for UDP threads, TCP threads are caught by while(alive)
+	int join_val;
+	for (int i = 0; i < num_threads; i++) {
+		pthread_join(receiv_threads[i], NULL);
+		printf("thread %i joined\n", i);
 	}
 	pthread_exit(NULL);
 }
