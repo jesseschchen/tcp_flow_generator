@@ -430,20 +430,53 @@ void start_one_server_n_receiv(int num_threads, int num_connections, int start_p
 	}
 
 
-
+	// receiv_threads variables
 	pthread_t receiv_threads[num_threads];
 	int connection_fds[num_connections];
 	char fd_validity[num_connections];
 	long recv_data_count[num_connections];
 	struct receiv_info ri[num_threads];
 	struct udp_receiv_info uri[num_threads];
+	
+
+
+
+	// ACCEPT TCP CONNECTIONS LOOP
+	struct sockaddr_in client_address;
+	if (tcp) {
+		int len = sizeof(client_address);
+		int new_socket;
+		int connection_id;
+		int port;
+		//while (keep_alive == 1) {
+			for (int i = 0; i < num_connections; i++) {
+				port = start_port + i;
+				server_fd = do_tcp_server_prep(ip_addr, port);
+				printf("prep server: %i\n", i);
+				new_socket = accept(server_fd, (struct sockaddr*)&client_address, &len);
+				printf("connection accepted!\n");
+				close(server_fd);
+
+				//connection_id = ntohs(client_address.sin_port) - start_port;
+				connection_id = i;
+				printf("server_port: %i\n", start_port);
+				printf("client port: %i\n",ntohs(client_address.sin_port));
+				printf("got connection id: %i\n", connection_id);
+
+				connection_fds[connection_id] = new_socket;
+				fd_validity[connection_id] = (char)1;
+				recv_data_count[i] = 0;
+			}
+		//}
+	}
+
 	// START RECEIV_THREADS
 	if (tcp) {
 		// TCP RECEIV_THREAD VARIABLES
 		for (int i = 0; i < num_connections; i++) {
 			// prep fd_validity
-			fd_validity[i] = (char) 0;
-			recv_data_count[i] = 0;
+			//fd_validity[i] = (char) 0;
+			//recv_data_count[i] = 0;
 		}
 		// start num_threads tcp receiv_threads
 		int mod = num_connections % num_threads;
@@ -479,32 +512,8 @@ void start_one_server_n_receiv(int num_threads, int num_connections, int start_p
 
 
 
-	// ACCEPT TCP CONNECTIONS LOOP
-	struct sockaddr_in client_address;
-	if (tcp) {
-		int len = sizeof(client_address);
-		int new_socket;
-		int connection_id;
-		int port;
-		//while (keep_alive == 1) {
-			for (int i = 0; i < num_connections; i++) {
-				port = start_port + i;
-				server_fd = do_tcp_server_prep(ip_addr, port);
-				new_socket = accept(server_fd, (struct sockaddr*)&client_address, &len);
-				printf("connection accepted!\n");
-				close(server_fd);
 
-				//connection_id = ntohs(client_address.sin_port) - start_port;
-				connection_id = i;
-				printf("server_port: %i\n", start_port);
-				printf("client port: %i\n",ntohs(client_address.sin_port));
-				printf("got connection id: %i\n", connection_id);
 
-				connection_fds[connection_id] = new_socket;
-				fd_validity[connection_id] = (char)1;
-			}
-		//}
-	}
 	
 	// JOIN THREADS
 	// mostly used for UDP threads, TCP threads are caught by while(alive)

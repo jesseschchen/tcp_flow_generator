@@ -91,14 +91,12 @@ int open_tcp_connection(char* ip_addr, int server_port) {
 	address.sin_port = htons(server_port);
 
 	// connect to server
-	if (connect(client_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
-		printf("failed port: %i\n", server_port);
-		perror("connect failed");
-		exit(EXIT_FAILURE);
+	while (connect(client_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
+		//printf("failed port: %i\n", server_port);
+		//perror("connect failed");
+		//exit(EXIT_FAILURE);
 	}
-	else {
-		printf("connected: %i\n", server_port);
-	}
+	printf("connected: %i\n", server_port);
 
 	return client_fd;
 }
@@ -343,6 +341,7 @@ void send_n_seq_messages(int num_messages, int start_port, int message_size, int
 		if (tcp) {
 			client_fds[i] = open_tcp_connection(ip_addr, port);
 			//client_fds[i] = open_tcp_connection(ip_addr, port, 26001); // LOCAL TESTING ONLY
+			//sleep(0.01);
 		}
 		else {
 			client_fds[i] = open_udp_connection(ip_addr, port);
