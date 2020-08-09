@@ -277,20 +277,21 @@ void* receiv_thread(void* ri) {
 						close(connection_fds[i]);
 						fd_validity[i] = (char) 0;
 						valid_connections = check_valid_connections(fd_validity, num_connections);
-						int total = 0;
+						long total = 0;
 						if (!valid_connections) {
 							for (int j = 0; j < num_connections; j++) {
 								printf("port %i: %li\n", j, recv_data_count[j]);
 								total += recv_data_count[j];
 							}
-							printf("total data: %i\n", total);
+							printf("total data: %li\n", total);
 							printf("killing server\n");
 							free(buffer);
 							exit(0);
 						}
 					}
 				}
-				recv_data_count[i] += read_val;
+				if (read_val > 0)
+					recv_data_count[i] += read_val;
 				//printf("read_val: %i\n", read_val);
 			}
 		}
@@ -422,7 +423,7 @@ void start_one_server_n_receiv(int num_threads, int num_connections, int start_p
 	int server_fd;
 	if (tcp) {
 		//server_fd = do_tcp_server_prep(ip_addr, 25999); // LOCAL TESTING ONLY
-		server_fd = do_tcp_server_prep(ip_addr, start_port);
+		//server_fd = do_tcp_server_prep(ip_addr, start_port);
 	} else {
 		//server_fd = do_udp_server_prep(ip_addr, 25999); // LOCAL TESTING
 		server_fd = do_udp_server_prep(ip_addr, start_port);
@@ -484,17 +485,25 @@ void start_one_server_n_receiv(int num_threads, int num_connections, int start_p
 		int len = sizeof(client_address);
 		int new_socket;
 		int connection_id;
-		while (keep_alive == 1) {
-			new_socket = accept(server_fd, (struct sockaddr*)&client_address, &len);
-			printf("connection accepted!\n");
-			connection_id = ntohs(client_address.sin_port) - start_port;
-			printf("server_port: %i\n", start_port);
-			printf("client port: %i\n",ntohs(client_address.sin_port));
-			printf("got connection id: %i\n", connection_id);
+		int port;
+		//while (keep_alive == 1) {
+			for (int i = 0; i < num_connections; i++) {
+				port = start_port + i;
+				server_fd = do_tcp_server_prep(ip_addr, port);
+				new_socket = accept(server_fd, (struct sockaddr*)&client_address, &len);
+				printf("connection accepted!\n");
+				close(server_fd);
 
-			connection_fds[connection_id] = new_socket;
-			fd_validity[connection_id] = (char)1;
-		}
+				//connection_id = ntohs(client_address.sin_port) - start_port;
+				connection_id = i;
+				printf("server_port: %i\n", start_port);
+				printf("client port: %i\n",ntohs(client_address.sin_port));
+				printf("got connection id: %i\n", connection_id);
+
+				connection_fds[connection_id] = new_socket;
+				fd_validity[connection_id] = (char)1;
+			}
+		//}
 	}
 	
 	// JOIN THREADS
