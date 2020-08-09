@@ -251,12 +251,13 @@ void* receiv_thread(void* ri) {
 	int num_connections = rec_inf->num_connections;
 	int connn_lo = rec_inf->connn_lo;
 	int connn_hi = rec_inf->connn_hi;
+	int message_size = rec_inf->message_size;
 	int* connection_fds = rec_inf->connection_fds;
 	char* fd_validity = rec_inf->fd_validity;
 	long* recv_data_count = rec_inf->recv_data_count;
 	char* keep_alive = rec_inf->keep_alive;
 
-	int buffer_size = 4096;
+	int buffer_size = message_size;
 	char* buffer = malloc(buffer_size);
 
 	int read_val;
@@ -449,6 +450,7 @@ void start_one_server_n_receiv(int num_threads, int num_connections, int start_p
 			ri[i].connn_hi = conn_ind + num_to_serve;
 			conn_ind += num_to_serve;
 
+			ri[i].message_size = message_size;
 			ri[i].connection_fds = (int*)&connection_fds;
 			ri[i].fd_validity = (char*)&fd_validity;
 			ri[i].recv_data_count = (long*)&recv_data_count;
