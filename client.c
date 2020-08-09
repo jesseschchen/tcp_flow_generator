@@ -375,7 +375,7 @@ void send_n_seq_messages(int num_messages, int start_port, int message_size, int
 
 	// send message loop
 	while (keep_alive == 1) {
-		for (int i = 0; i < num_messages; i++) {
+		for (int i = 0; i < num_messages && (keep_alive == 1); i++) {
 			message_id = (int)message_id_0 + num_sent;
 			//char* message = create_message(message_size, (char*)&message_id, random_bytes);
 
@@ -383,6 +383,7 @@ void send_n_seq_messages(int num_messages, int start_port, int message_size, int
 				send_val = send(client_fds[i], random_bytes, message_size, 0);
 			} else {
 				send_val = sendto(client_fds[i], random_bytes, message_size, 0, (struct sockaddr*) &addresses[i], sizeof(addresses[i]));
+				printf("sent %i\n", num_messages);
 			}
 
 			if (send_val < 0) {
