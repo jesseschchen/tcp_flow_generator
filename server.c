@@ -261,6 +261,7 @@ void* receiv_thread(void* ri) {
 	int buffer_size = message_size;
 	char* buffer = malloc(buffer_size);
 
+
 	int read_val;
 	int valid_connections;
 	while(*keep_alive == 1) {
@@ -282,6 +283,7 @@ void* receiv_thread(void* ri) {
 								printf("port %i: %li\n", j, recv_data_count[j]);
 							}
 							printf("killing server\n");
+							free(buffer);
 							exit(0);
 						}
 					}
@@ -291,6 +293,7 @@ void* receiv_thread(void* ri) {
 			}
 		}
 	}
+	free(buffer);
 	pthread_exit(NULL);
 }
 
@@ -428,12 +431,12 @@ void start_one_server_n_receiv(int num_threads, int num_connections, int start_p
 	pthread_t receiv_threads[num_threads];
 	int connection_fds[num_connections];
 	char fd_validity[num_connections];
+	long recv_data_count[num_connections];
 	struct receiv_info ri[num_threads];
 	struct udp_receiv_info uri[num_threads];
 	// START RECEIV_THREADS
 	if (tcp) {
 		// TCP RECEIV_THREAD VARIABLES
-		long recv_data_count[num_connections];
 		for (int i = 0; i < num_connections; i++) {
 			// prep fd_validity
 			fd_validity[i] = (char) 0;
@@ -474,8 +477,8 @@ void start_one_server_n_receiv(int num_threads, int num_connections, int start_p
 
 
 	// ACCEPT TCP CONNECTIONS LOOP
+	struct sockaddr_in client_address;
 	if (tcp) {
-		struct sockaddr_in client_address;
 		int len = sizeof(client_address);
 		int new_socket;
 		int connection_id;
@@ -483,6 +486,8 @@ void start_one_server_n_receiv(int num_threads, int num_connections, int start_p
 			new_socket = accept(server_fd, (struct sockaddr*)&client_address, &len);
 			printf("connection accepted!\n");
 			connection_id = ntohs(client_address.sin_port) - start_port;
+			printf("server_port: %i\n", start_port);
+			printf("client port: %i\n",ntohs(client_address.sin_port));
 			printf("got connection id: %i\n", connection_id);
 
 			connection_fds[connection_id] = new_socket;
