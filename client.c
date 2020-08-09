@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <sys/socket.h>
+#include <sys/resource.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -73,9 +74,12 @@ int open_tcp_connection(char* ip_addr, int port, int server_port) {
 	// initialize the address :<ip_addr>:<port_num>
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = htonl(INADDR_ANY);
-	address.sin_port = htons(port+1);
-	printf("port+1: %i\n", (port+1));
+	address.sin_port = htons(port);
+	printf("port: %i\n", (port));
 
+
+	int enable = 1;
+	setsockopt(client_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
 	// bind fd to particular ip_addr and port
 	if (bind(client_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
 		perror("bind failed");
@@ -120,6 +124,7 @@ int open_udp_connection(char* ip_addr, int port) {
 		exit(EXIT_FAILURE);
 	}
 
+	printf("open UDP connection on port %i\n", port);
 	return client_fd;
 }
 
@@ -266,8 +271,10 @@ void* timer_thread(void* ti) {
 	int t = tim_inf->time;
 	char* keep_alive = tim_inf->keep_alive;
 
+	printf("timer started : %i\n", t);
 	sleep(t);
 	*keep_alive = 0;
+	printf("timer ended %i\n", *keep_alive);
 
 	pthread_exit(NULL);
 }
@@ -370,17 +377,17 @@ void send_n_seq_messages(int num_messages, int start_port, int message_size, int
 	while (keep_alive == 1) {
 		for (int i = 0; i < num_messages; i++) {
 			message_id = (int)message_id_0 + num_sent;
-			char* message = create_message(message_size, (char*)&message_id, random_bytes);
+			//char* message = create_message(message_size, (char*)&message_id, random_bytes);
 
 			if (tcp) {
-				send_val = send(client_fds[i], message, message_size, 0);
-			}
-			else {
-				send_val = sendto(client_fds[i], message, message_size, 0, (struct sockaddr*) &addresses[i], sizeof(addresses[i]));
+				send_val = send(client_fds[i], random_bytes, message_size, 0);
+			} else {
+				send_val = sendto(client_fds[i], random_bytes, message_size, 0, (struct sockaddr*) &addresses[i], sizeof(addresses[i]));
 			}
 
 			if (send_val < 0) {
-				printf("failed to send%i \n", num_sent);
+				perror("failed to send");
+				//printf("failed to send%i \n", num_sent);
 			}
 			num_sent += 1;
 		}	
@@ -468,6 +475,11 @@ int main(int argc, char const* argv[]) {
 	//char* ip_addr = "10.16.224.68";
 
 
+	if (setpriority(PRIO_PROCESS, 0, -5) < 0) {
+		perror("unable to set priority");
+		exit(EXIT_FAILURE);
+	}
+
 	//int start_port = 26000;
 
 	
@@ -479,6 +491,9 @@ int main(int argc, char const* argv[]) {
 
 
 	//int tcp = 0;
+	//if (!tcp) {
+	//	message_size = 40000;
+	//}
 
 
 
