@@ -271,7 +271,7 @@ void* receiv_thread(void* ri) {
 		for (int i = connn_lo; i < connn_hi; i++) {
 			// if connection is still open
 			if (fd_validity[i]) {
-				read_val = recv(connection_fds[i], buffer, buffer_size, 0);
+				read_val = recv(connection_fds[i], buffer, buffer_size, MSG_DONTWAIT);
 				if (read_val == 0) { // connection is ended
 					if(shutdown(connection_fds[i], SHUT_RD) != 0) {
 						printf("failed shutdown\n");
@@ -296,12 +296,12 @@ void* receiv_thread(void* ri) {
 				}
 				if (read_val > 0) {
 					recv_data_count[i] += read_val;
-					printf("got packet\n");
+					/*printf("got packet\n");
 					if (recv_data_count[i] >= message_size) {
 						printf("got data:%i %li\n", i, recv_data_count[i]);
 						send(connection_fds[i], message, strlen(message), 0);
 						recv_data_count[i] = 0;
-					}
+					}*/
 				}
 				//printf("read_val: %i\n", read_val);
 			}

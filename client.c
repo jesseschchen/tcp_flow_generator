@@ -378,11 +378,11 @@ void send_n_seq_messages(int num_messages, int start_port, int message_size, int
 	while (keep_alive == 1) {
 		for (int i = 0; i < num_messages && (keep_alive == 1); i++) {
 			message_id = (int)message_id_0 + num_sent;
-			//char* message = create_message(message_size, (char*)&message_id, random_bytes);
+			char* message = create_message(message_size, (char*)&message_id, random_bytes);
 
 			if (tcp) {
-				send_val = send(client_fds[i], random_bytes, message_size, 0);
-				read_val = read(client_fds[i], recv_buffer, 2048);
+				send_val = send(client_fds[i], message, message_size, 0);
+				//read_val = read(client_fds[i], recv_buffer, 2048);
 			} else {
 				send_val = sendto(client_fds[i], random_bytes, message_size, 0, (struct sockaddr*) &addresses[i], sizeof(addresses[i]));
 				//printf("sent %i\n", num_messages);
