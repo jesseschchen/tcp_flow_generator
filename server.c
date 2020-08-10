@@ -111,6 +111,8 @@ void* start_server(void* si) {
 	address.sin_port = htons(port);
 
 	// bind socket to particular address
+	int enable=1;
+	setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
 	if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
 		perror("bind failed");
 		exit(EXIT_FAILURE);
