@@ -112,7 +112,10 @@ void* start_tcp_server(void* si) {
 		exit(EXIT_FAILURE);
 	}
 
-	//if (setsockopt(server_fd, SOL_SOCKET, SO))
+	int enable = 1;
+	if ((setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR,  &enable, sizeof(int))) < 0) {
+		perror("setsockopt failed");
+	}
 
 	// set IPv4, IP address, and port for address
 	address.sin_family = AF_INET;
