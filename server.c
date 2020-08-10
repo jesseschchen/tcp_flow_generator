@@ -260,6 +260,7 @@ void* receiv_thread(void* ri) {
 	int buffer_size = message_size;
 	char* buffer = malloc(buffer_size);
 
+	char* message = "ok";
 
 	int read_val;
 	int valid_connections;
@@ -290,8 +291,13 @@ void* receiv_thread(void* ri) {
 						}
 					}
 				}
-				if (read_val > 0)
+				if (read_val > 0) {
 					recv_data_count[i] += read_val;
+					if (recv_data_count[i] >= message_size) {
+						send(connection_fds[i], message, strlen(message), 0);
+						recv_data_count[i] = 0;
+					}
+				}
 				//printf("read_val: %i\n", read_val);
 			}
 		}

@@ -362,6 +362,7 @@ void send_n_seq_messages(int num_messages, int start_port, int message_size, int
 	int num_sent = 0;
 	int message_id;
 	int send_val;
+	int read_val;
 
 	// start timer thread
 	struct timer_info ti;
@@ -372,6 +373,7 @@ void send_n_seq_messages(int num_messages, int start_port, int message_size, int
 		pthread_create(&t_thread, NULL, timer_thread, (void*)&ti);
 	}
 
+	char* recv_buffer = malloc(2048);
 	// send message loop
 	while (keep_alive == 1) {
 		for (int i = 0; i < num_messages && (keep_alive == 1); i++) {
@@ -380,6 +382,7 @@ void send_n_seq_messages(int num_messages, int start_port, int message_size, int
 
 			if (tcp) {
 				send_val = send(client_fds[i], random_bytes, message_size, 0);
+				read_val = read(client_fds[i], recv_buffer, 2048);
 			} else {
 				send_val = sendto(client_fds[i], random_bytes, message_size, 0, (struct sockaddr*) &addresses[i], sizeof(addresses[i]));
 				//printf("sent %i\n", num_messages);
