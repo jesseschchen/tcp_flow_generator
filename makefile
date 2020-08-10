@@ -12,14 +12,14 @@ default: main.c
 
 server: server.c
 	@echo "building server..."
-	@$(CC) $(CFLAGS) -o server server.c
-	@chmod +x server
+	@$(CC) $(CFLAGS) -o master_server server.c
+	@chmod +x master_server
 	@echo "finished building server."
 
 client: client.c
 	@echo "building client..."
-	@$(CC) $(CFLAGS) -o client client.c
-	@chmod +x client
+	@$(CC) $(CFLAGS) -o master_client client.c
+	@chmod +x master_client
 	@echo "finished building client."
 
 clean: 
