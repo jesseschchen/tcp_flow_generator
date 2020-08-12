@@ -24,5 +24,5 @@ client: client.c
 
 clean: 
 	@echo "cleaning..."
-	@rm -f *client *server
+	@rm -f control_client control_server
 	@echo "finished cleaning."

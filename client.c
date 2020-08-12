@@ -178,7 +178,7 @@ void* send_tcp_message_loop(void* msi) {
 	message_sender_info* m_s_i = (message_sender_info*) msi;
 	int port = m_s_i->port;
 	int message_size = m_s_i->message_size;
-	message_size = 30000;
+	//message_size = 30000;
 	char* ip_addr = m_s_i->ip_addr;
 	char* keep_alive = m_s_i->keep_alive;
 
@@ -190,7 +190,8 @@ void* send_tcp_message_loop(void* msi) {
 	char message_id_0 = (char)0; //read_random_bytes(4);
 	//char* message_id_0 = "0000";
 	
-	char* recv_buffer = malloc(2048);
+	int recv_buffer_size = 2048;
+	char* recv_buffer = malloc(recv_buffer_size);
 
 	// repeatedly send message
 	while (*keep_alive == 1) {
@@ -201,7 +202,10 @@ void* send_tcp_message_loop(void* msi) {
 		// send message
 		if (send(client_fd, message, message_size, 0) < 0) {
 			printf("failed to send %i\n", num_sent);
+		} else {
+			int bytes_read = read(client_fd, recv_buffer, recv_buffer_size);
 		}
+
 		num_sent += 1;
 		//printf("num_sent:%i: %i\n", port, num_sent);
 		//sleep(0.01);
@@ -279,6 +283,8 @@ void* timer_thread(void* ti) {
 
 // called once
 // this creates all the threads
+// MULITHREADING VERSION
+// USED IN CONTROL BRANCH
 void send_n_messages(int num_messages, int start_port, int message_size, int time, char* ip_addr, int tcp) {
 
 	pthread_t threads[num_messages+1];
@@ -499,8 +505,10 @@ int main(int argc, char const* argv[]) {
 	//}
 
 
+	// multithreading
+	send_n_messages(num_servers, start_port, message_size, runtime, ip_addr, tcp);
 
-	//send_n_messages(num_servers, start_port, message_size, runtime, ip_addr, tcp);
-	send_n_seq_messages(num_servers, start_port, message_size, runtime, ip_addr, tcp);
+	// single-threading
+	//send_n_seq_messages(num_servers, start_port, message_size, runtime, ip_addr, tcp);
 
 }

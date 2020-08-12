@@ -55,10 +55,10 @@ long accept_connection(int new_socket, int message_size) {
 	while(read_size = read(new_socket, buffer, buffer_size)) {
 		total_read += read_size;
 		//printf("total_read: %i\n", total_read);
-		//if (total_read >= message_size) {
-		//	int send_val = send(new_socket, message, strlen(message), 0);
-		//	total_read = 0;
-		//}
+		if (total_read >= message_size) {
+			int send_val = send(new_socket, message, strlen(message), 0);
+			total_read = 0;
+		}
 	}
 
 	if(shutdown(new_socket, SHUT_RD) != 0) {
@@ -563,9 +563,11 @@ int main(int argc, char const *argv[]) {
 	//int tcp = 0;
 	//int num_threads = 2;
 
-	//start_n_servers(num_servers, start_port, runtime, ip_addr, message_size, tcp);
+	// multithreading
+	start_n_servers(num_servers, start_port, runtime, ip_addr, message_size, tcp);
 
-	start_one_server_n_receiv(num_threads, num_servers, start_port, runtime, ip_addr, message_size, tcp);
+	// single threading
+	//start_one_server_n_receiv(num_threads, num_servers, start_port, runtime, ip_addr, message_size, tcp);
 
 	//start_one_server(num_servers, start_port, runtime, ip_addr);
 
