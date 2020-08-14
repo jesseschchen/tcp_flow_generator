@@ -41,9 +41,9 @@ typedef struct timer_info {
 
 
 long accept_connection(int new_socket, int message_size) {
-	int buffer_size = 4096;
+	//int buffer_size = 4096;
 	//char buffer[buffer_size];
-	char* buffer = malloc(buffer_size);
+	char* buffer = malloc(message_size);
 	buffer[0] = '\0';
 
 	//printf("preread buffer: %s\n", buffer);
@@ -52,12 +52,15 @@ long accept_connection(int new_socket, int message_size) {
 	int read_size = 0;
 	char* message = "ok";
 	long total_read = 0;
-	while(read_size = read(new_socket, buffer, buffer_size)) {
+	int messages_recvd = 0;
+	while(read_size = read(new_socket, buffer, message_size)) {
 		total_read += read_size;
+		messages_recvd += 1;
 		//printf("total_read: %i\n", total_read);
 		if (total_read >= message_size) {
-			int send_val = send(new_socket, message, strlen(message), 0);
-			total_read = 0;
+			//int send_val = send(new_socket, message, strlen(message), 0);
+			// DISABLE RESPONSE MESSAGE SO CLIENT SENDS AT FULL RATE
+			//total_read = 0;
 		}
 	}
 
@@ -112,16 +115,15 @@ void* start_tcp_server(void* si) {
 		exit(EXIT_FAILURE);
 	}
 
-	int enable = 1;
-	if ((setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR,  &enable, sizeof(int))) < 0) {
-		perror("setsockopt failed");
-	}
 
 	// set IPv4, IP address, and port for address
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = inet_addr(ip_addr);
 	address.sin_port = htons(port);
 
+	int enable=1;
+	setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
+	printf("port: %i\n", port);
 	// bind socket to particular address
 	if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
 		perror("bind failed");
@@ -378,8 +380,8 @@ void start_n_servers(int num_servers, int start_port, int runtime, char* ip_addr
 
 	for(int i = 0; i < num_servers; i++) {
 		// server info struct
-		//si[i].port = start_port + i; // start unique servers
-		si[i].port = start_port; // start on one port
+		si[i].port = start_port + i; // start unique servers
+		//si[i].port = start_port; // start on one port
 		si[i].ip_addr = ip_addr;
 		si[i].keep_alive = &keep_alive;
 		si[i].message_size = message_size;

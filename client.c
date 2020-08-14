@@ -186,7 +186,7 @@ void* send_tcp_message_loop(void* msi) {
 	char* random_bytes = read_random_bytes(message_size);
 
 	// tcp SYN packet
-	int client_fd = open_tcp_connection(ip_addr, port); // TEMPORARY
+	int client_fd = open_tcp_connection(ip_addr, port);
 	char message_id_0 = (char)0; //read_random_bytes(4);
 	//char* message_id_0 = "0000";
 	
@@ -203,7 +203,9 @@ void* send_tcp_message_loop(void* msi) {
 		if (send(client_fd, message, message_size, 0) < 0) {
 			printf("failed to send %i\n", num_sent);
 		} else {
-			int bytes_read = read(client_fd, recv_buffer, recv_buffer_size);
+			// receive a reply before sending another message
+			// COMMENT OUT AS NEEDED **************************
+			//int bytes_read = read(client_fd, recv_buffer, recv_buffer_size);
 		}
 
 		num_sent += 1;
