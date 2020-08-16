@@ -205,7 +205,7 @@ void* send_tcp_message_loop(void* msi) {
 		} else {
 			// receive a reply before sending another message
 			// COMMENT OUT AS NEEDED **************************
-			//int bytes_read = read(client_fd, recv_buffer, recv_buffer_size);
+			int bytes_read = read(client_fd, recv_buffer, recv_buffer_size);
 		}
 
 		num_sent += 1;

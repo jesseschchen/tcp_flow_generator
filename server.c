@@ -58,8 +58,8 @@ long accept_connection(int new_socket, int message_size) {
 		messages_recvd += 1;
 		//printf("total_read: %i\n", total_read);
 		if (total_read >= message_size) {
-			//int send_val = send(new_socket, message, strlen(message), 0);
-			// DISABLE RESPONSE MESSAGE SO CLIENT SENDS AT FULL RATE
+			int send_val = send(new_socket, message, strlen(message), 0);
+			//*** DISABLE RESPONSE MESSAGE SO CLIENT SENDS AT FULL RATE
 			//total_read = 0;
 		}
 	}
