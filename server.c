@@ -53,14 +53,16 @@ long accept_connection(int new_socket, int message_size) {
 	char* message = "ok";
 	long total_read = 0;
 	int messages_recvd = 0;
+	int current_msg_size = 0;
 	while(read_size = read(new_socket, buffer, message_size)) {
-		total_read += read_size;
+		current_msg_size += read_size;
 		messages_recvd += 1;
 		//printf("total_read: %i\n", total_read);
-		if (total_read >= message_size) {
+		if (current_msg_size >= message_size) {
 			int send_val = send(new_socket, message, strlen(message), 0);
 			//*** DISABLE RESPONSE MESSAGE SO CLIENT SENDS AT FULL RATE
-			//total_read = 0;
+			total_read += current_msg_size;
+			current_msg_size = 0;
 		}
 	}
 
@@ -205,13 +207,13 @@ void* start_udp_server(void* si) {
 			total_read += n;
 		printf("tota_read: %li\n", total_read);
 
-		msg_buffer[8] = '\0';
+		//msg_buffer[8] = '\0';
 		//printf("read: %i\n", n);
 		//printf("msg: %s\n", msg_buffer);
 	}
 
 
-	printf("server closed: >%li bytes received\n", total_read);
+	printf("server closed: %li bytes received on port %i \n", total_read, port);
 
 	free(msg_buffer);
 	pthread_exit(NULL);
@@ -388,10 +390,10 @@ void start_n_servers(int num_servers, int start_port, int runtime, char* ip_addr
 
 		// create a server thread
 		int thread_val;
-		if (tcp) {
+		if (tcp) {  // TCP SERVERS
 			thread_val = pthread_create(&threads[i], NULL, start_tcp_server, (void*)&si[i]);
 		}
-		else {
+		else {  // UDP SERVERS
 			thread_val = pthread_create(&threads[i], NULL, start_udp_server, (void*)&si[i]);
 		}
 		// start the server thread
